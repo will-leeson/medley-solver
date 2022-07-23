@@ -1,7 +1,7 @@
 import os, sys, subprocess, datetime
 from medleysolver.constants import SAT_RESULT, UNSAT_RESULT, UNKNOWN_RESULT, TIMEOUT_RESULT, ERROR_RESULT, Result, is_solved
 
-import csv 
+import csv, json
 
 def run_problem(solver, invocation, problem, timeout):
     # pass the problem to the command
@@ -59,3 +59,27 @@ def output2result(problem, output):
 
     # print(problem, ': Couldn\'t parse output', file=sys.stderr)
     return ERROR_RESULT
+
+def simulate_problem(solver, invocation, problem, timeout):
+    solvers = ["Bitwuzla", "cvc5", "mathsat-5.6.6", "STP 2021", "Yices 2.6.2","z3-4.8.11"]
+    solvers.sort()
+
+    choice = solvers.index(solver)
+    
+    labels = json.load(open("/home/will/Research/sibyl/data/ESBMCLabels.json"))
+
+    problem = problem.split("_+_")
+    problem = problem[0]+"/"+problem[1]
+    
+    res = labels['train'][problem][choice]
+
+    res = res if res < 1200 else 1200
+
+
+    result = Result(
+        problem  = problem.split("/", 2)[-1],
+        result   = SAT_RESULT,
+        elapsed  = res
+    )
+
+    return result

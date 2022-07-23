@@ -4,15 +4,25 @@ from collections import OrderedDict
 from medleysolver.compute_features import get_features
 from medleysolver.constants import SOLVERS, Result, Solved_Problem, SAT_RESULT, UNSAT_RESULT, is_solved, is_error
 from medleysolver.distributions import ExponentialDist
-from medleysolver.dispatch import run_problem
+from medleysolver.dispatch import run_problem, simulate_problem
 
 def execute(problems, output, classifier, time_manager, timeout, feature_setting, extra_time_to_first, reward):
     mean = 0
     writer = csv.writer(open(output, 'w'))
+    writer.writerow(['problem',
+    'datapoint',
+    'solve_method',
+    'time',
+    'result',
+    'order',
+    'time_spent'])
 
     for c, prob in tqdm.tqdm(enumerate(problems, 1)): 
         # start = time.time()
-        point = np.array(get_features(prob, feature_setting))
+        try:
+            point = np.array(get_features(prob, feature_setting))
+        except:    
+            continue
         #normalizing point
         mean = (c - 1) / c * mean + 1 / c * point
         point = point / (mean+1e-9)
@@ -56,8 +66,8 @@ def apply_ordering(problem, order, timeout, time_manager, extra_time_to_first, t
     for i in range(len(order)):
         solver = order[i]
         time_for_solver = int(timeout - elapsed) + 1 if i == len(order) - 1 else budgets[i]
-        res = run_problem(solver, SOLVERS[solver], problem, time_for_solver)
-
+        # res = run_problem(solver, SOLVERS[solver], problem, time_for_solver)
+        res = simulate_problem(solver, SOLVERS[solver], problem, time_for_solver)
         if reward == "binary":
             reward = 1 if is_solved(res.result) else 0
         elif reward == "bump":
